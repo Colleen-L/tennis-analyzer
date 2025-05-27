@@ -15,23 +15,21 @@ export default function TabLayout() {
           ),
         }}/>
 
-
       {/* Explore Tab */}
       <Tabs.Screen
-        name="explore"
+        name="match"
         options={{
-          title: 'Explore',
+          title: 'Match Analysis',
           tabBarIcon: ({ color }) => (
             <Ionicons name="compass" size={24} color={color} />
           ),
         }}/>
 
-
       {/* Camera Tab (hidden in tab bar) */}
       <Tabs.Screen
         name="camera"
         options={{
-          href: null, // Hides from tab bar
+          // href: null, // Hides from tab bar
           headerShown: false,
         }}/>
 

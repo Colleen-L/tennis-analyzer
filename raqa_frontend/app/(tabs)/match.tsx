@@ -8,7 +8,7 @@ export default function Explore() {
         justifyContent: 'center',
         alignItems: 'center'
     }}>
-      <Text>Explore Content</Text>
+      <Text style = {{color: 'white'}}>Explore Content</Text>
       <Link href="/camera" asChild>
         <TouchableOpacity style = {{
           padding: 15,
