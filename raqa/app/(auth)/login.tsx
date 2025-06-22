@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TextInput, Image, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 
@@ -63,7 +63,10 @@ export default function LoginScreen() {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.headerContainer}>
-          <Text style={styles.header}></Text>
+            <Image
+              source={require('@/assets/images/tenniscourt.webp')}
+              style={{ width: 200, height: 200}}
+            />
         </View>
 
         {/* login form */}
@@ -126,9 +129,6 @@ const styles = StyleSheet.create({
     borderEndEndRadius: 35,
     borderEndStartRadius: 35,
     backgroundColor: '#6A9860',
-  },
-  header: {
-    //styling here
   },
   loginContainer: {
     flex: 1,
