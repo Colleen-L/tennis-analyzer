@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { View, TextInput, Image, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 
@@ -8,6 +10,10 @@ type LoginResponse = {
   access_token: string;
   token_type: string;
 };
+
+//checks web browser session's completion of authentication process
+//detects and completes pending authentication (after web-based auth redirection)
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -63,6 +69,15 @@ export default function LoginScreen() {
     }
   };
 
+  //Google Sign-In
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: '550585625092-439v5ksj1pfbimha2blb6gb1i56264ht.apps.googleusercontent.com',
+    iosClientId: '550585625092-e26ej2s4cnc1s1kvs6jqnavljj7sb0hu.apps.googleusercontent.com',
+    clientId: '550585625092-0hkur1li8dirla1ijen79mhodd62m3bq.apps.googleusercontent.com',
+  });
+
+
+  // CONTINUE GOOGLE AUTH HERE...
 
   return (
     <>
@@ -108,6 +123,13 @@ export default function LoginScreen() {
             <Text style={styles.linkBtnText}>No Account? Sign Up</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={() => promptAsync()}
+            style={[styles.button, styles.googleBtn]}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>Continue with Google</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </>
@@ -160,5 +182,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Menlo',
     fontSize: 14,
     textAlign: 'right',
+  },
+  googleBtn: {
+    backgroundColor: '#DB4437',
+    marginTop: 20,
   }
 });

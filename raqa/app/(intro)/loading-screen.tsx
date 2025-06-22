@@ -26,6 +26,9 @@ export default function LoadingIntro() {
           <Text style={styles.logoText}>
             RAQA.
           </Text>
+          <Text style={styles.motto}>
+            Start hitting rockets.
+          </Text>
       </View>
     </>
   );
@@ -40,6 +43,10 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 18,
+    fontFamily: 'Menlo',
+  },
+  motto: {
+    fontSize: 12,
     fontFamily: 'Menlo',
   }
 });

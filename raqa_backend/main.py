@@ -6,14 +6,11 @@ from database import local_session, engine
 from models import Base, User
 from auth import hash_password, verify_password, create_access_token
 
-
 # automatically creates tables as defined in models.py in db (if it doesn't exist)
 Base.metadata.create_all(bind=engine)
 
-
 # creates new FastAPI application instance
 app = FastAPI()
-
 
 # enable CORS (Cross-Origin Resource Sharing)
 app.add_middleware(
@@ -31,7 +28,6 @@ def get_db():
   finally:
       db.close()
 
-
 # defines expected requests for signup and login
 class SignupRequest(BaseModel):
   name: str = Field(..., min_length=1, string_whitespace=True)
@@ -42,7 +38,6 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
   email: str
   password: str = Field(..., min_length=1, strip_whitespace=True)
-
 
 # signup functionality
 @app.post("/signup")
@@ -74,4 +69,3 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
       raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
   token = create_access_token(data={"sub": user.email})
   return {"access_token": token, "token_type": "bearer"}
-
