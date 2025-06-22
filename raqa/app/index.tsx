@@ -42,7 +42,7 @@ export default function RootLayout() {
       if (isLoggedIn) {
         router.replace('/(tabs)');
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/(intro)/loading-screen');
       }
     }
   }, [isLoading, isLoggedIn]);

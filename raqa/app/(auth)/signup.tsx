@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 
@@ -19,6 +19,19 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
 
   const signup = async () => {
+
+    //not permitting empty fields
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      Alert.alert('Missing Fields', 'Please fill in all fields.');
+      return;
+    }
+
+    //password must be more than 6 characters
+    if (password.length < 6) {
+      Alert.alert('Weak Password', 'Password must be at least 6 characters.');
+      return;
+    }
+
     setLoading(true);
     
     try {
@@ -79,7 +92,12 @@ export default function SignupScreen() {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Sign Up" onPress={signup}/>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={signup}
+      >
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
     </View>
   )
 }
@@ -88,14 +106,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    backgroundColor: '#EBEBEB',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ffffff',
+    borderColor: '#353535',
+    color: '#6A9860',
     marginVertical: 8,
-    paddingHorizontal: 12,
+    marginHorizontal: 50,
     paddingVertical: 8,
     borderRadius: 4,
+    fontFamily: 'Menlo',
+    padding: 20,
+  },
+  button: {
+    backgroundColor: '#353535',
+    marginHorizontal: 50,
+    borderRadius: 12,
+    marginTop: 10,
+    paddingVertical: 8,
+  },
+  buttonText: {
+    color: '#EBEBEB',
+    fontFamily: 'Menlo',
+    fontSize: 18,
+    textAlign: 'center',
   }
 })

@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from fastapi.middleware.cors import CORSMiddleware
 from database import local_session, engine
 from models import Base, User
@@ -34,14 +34,14 @@ def get_db():
 
 # defines expected requests for signup and login
 class SignupRequest(BaseModel):
-  name: str
-  email: str
-  password: str
+  name: str = Field(..., min_length=1, string_whitespace=True)
+  email: EmailStr
+  password: str = Field(..., min_length=6, strip_whitespace=True)
 
 
 class LoginRequest(BaseModel):
   email: str
-  password: str
+  password: str = Field(..., min_length=1, strip_whitespace=True)
 
 
 # signup functionality

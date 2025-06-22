@@ -19,6 +19,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const login = async () => {
+    //not permitting any empty fields
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
+
     setLoading(true);
     try {
       //sends a POST request to backend (where endpoint is /login)
@@ -61,14 +67,6 @@ export default function LoginScreen() {
   return (
     <>
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.headerContainer}>
-            <Image
-              source={require('@/assets/images/tenniscourt.webp')}
-              style={{ width: 200, height: 200}}
-            />
-        </View>
-
         {/* login form */}
         <View style={styles.loginContainer}>
           <TextInput
@@ -122,14 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#EBEBEB',
   },
-  headerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderEndEndRadius: 35,
-    borderEndStartRadius: 35,
-    backgroundColor: '#6A9860',
-  },
   loginContainer: {
     flex: 1,
     paddingTop: 50,
@@ -158,7 +148,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#EBEBEB',
     fontFamily: 'Menlo',
-    fontSize: 24,
+    fontSize: 18,
     textAlign: 'center',
   },
   linkBtn: {
