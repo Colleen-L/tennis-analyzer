@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 
@@ -83,8 +83,30 @@ export default function LoginScreen() {
             value={password}
             onChangeText={setPassword}
           />
-          <Button title={loading ? 'Logging in...' : 'Login'} onPress={login} disabled={loading} />
-          <Button title="No Account? Sign Up" onPress={() => router.replace('/(auth)/signup')}/>
+
+          {/* buttons */}
+          {/* login button */}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={login}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* signup option and redirection */}
+          <TouchableOpacity
+            onPress={() => router.replace('/(auth)/signup')}
+            style={styles.linkBtn}
+          >
+            <Text style={styles.linkBtnText}>No Account? Sign Up</Text>
+          </TouchableOpacity>
+
         </View>
       </View>
     </>
@@ -95,14 +117,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#EBEBEB',
   },
   headerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    borderEndEndRadius: 10,
-    borderEndStartRadius: 10,
+    borderEndEndRadius: 35,
+    borderEndStartRadius: 35,
     backgroundColor: '#6A9860',
   },
   header: {
@@ -114,11 +136,39 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ffffff',
+    borderColor: '#353535',
+    color: '#6A9860',
     marginVertical: 8,
     marginHorizontal: 50,
     paddingVertical: 8,
     borderRadius: 4,
     fontFamily: 'Menlo',
+    padding: 20,
   },
+  button: {
+    backgroundColor: '#353535',
+    marginHorizontal: 50,
+    borderRadius: 12,
+    marginTop: 10,
+    paddingVertical: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: '#A0B9A0',
+  },
+  buttonText: {
+    color: '#EBEBEB',
+    fontFamily: 'Menlo',
+    fontSize: 24,
+    textAlign: 'center',
+  },
+  linkBtn: {
+    marginHorizontal: 50,
+    marginTop: 20,
+  },
+  linkBtnText: {
+    color: '#353535',
+    fontFamily: 'Menlo',
+    fontSize: 14,
+    textAlign: 'right',
+  }
 });
