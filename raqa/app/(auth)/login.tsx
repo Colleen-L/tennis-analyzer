@@ -59,24 +59,35 @@ export default function LoginScreen() {
 
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title={loading ? 'Logging in...' : 'Login'} onPress={login} disabled={loading} />
-    </View>
+    <>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}></Text>
+        </View>
+
+        {/* login form */}
+        <View style={styles.loginContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+          <Button title={loading ? 'Logging in...' : 'Login'} onPress={login} disabled={loading} />
+          <Button title="No Account? Sign Up" onPress={() => router.replace('/(auth)/signup')}/>
+        </View>
+      </View>
+    </>
   );
 }
 
@@ -84,14 +95,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    backgroundColor: '#ffffff',
+  },
+  headerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderEndEndRadius: 10,
+    borderEndStartRadius: 10,
+    backgroundColor: '#6A9860',
+  },
+  header: {
+    //styling here
+  },
+  loginContainer: {
+    flex: 1,
+    paddingTop: 50,
   },
   input: {
     borderWidth: 1,
     borderColor: '#ffffff',
     marginVertical: 8,
-    paddingHorizontal: 12,
+    marginHorizontal: 50,
     paddingVertical: 8,
     borderRadius: 4,
+    fontFamily: 'Menlo',
   },
 });
