@@ -94,13 +94,13 @@ export default function Camera() {
           Alert.alert("Success", 'Video saved to RAQA album!');
 
 
-          // //move to movement-processor screen
-          // router.push(
-          //     {
-          //     pathname: '/movement-processor',
-          //     params: {videoUri: video.uri},
-          //     }
-          // );
+          //move to movement-processor screen
+          router.push(
+              {
+              pathname: '/(intro)/loading-screen',
+              params: {videoUri: video.uri},
+              }
+          );
           }
       } catch (error) {
           Alert.alert('Error', 'Recording failed');
