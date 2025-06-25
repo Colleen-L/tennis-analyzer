@@ -97,7 +97,7 @@ export default function Camera() {
           //move to movement-processor screen
           router.push(
               {
-              pathname: '/(intro)/loading-screen',
+              pathname: '/(strokes)/movement-processor',
               params: {videoUri: video.uri},
               }
           );
