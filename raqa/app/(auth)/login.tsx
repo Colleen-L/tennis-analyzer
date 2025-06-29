@@ -34,7 +34,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       //sends a POST request to backend (where endpoint is /login)
-      const response = await fetch('http://10.223.2.2:8000/login', {
+      const response = await fetch('http://172.20.10.2:8000/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

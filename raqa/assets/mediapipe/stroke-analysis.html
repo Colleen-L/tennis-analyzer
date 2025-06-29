@@ -4,87 +4,149 @@
     <title>MediaPipe Pose/Stroke Analysis</title>
 
     <!-- post detection model -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"
+      onload="window.ReactNativeWebView.postMessage('Pose loaded');"
+      onerror="window.ReactNativeWebView.postMessage('Pose failed to load');">
+    </script>
     <!-- drawing landmarks and connections -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"
+      onload="window.ReactNativeWebView.postMessage('Drawing utils loaded');"
+      onerror="window.ReactNativeWebView.postMessage('Drawing utils failed to load');">
+    </script>
     <!-- camera input -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"
+      onload="window.ReactNativeWebView.postMessage('Camera utils loaded');"
+      onerror="window.ReactNativeWebView.postMessage('Camera utils failed to load');">
+    </script>
     <style>
-      video,canvas {
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        /* allows for scrolling */
+        overflow: auto;
+        /* smoother scrolling in iOS */
+        -webkit-overflow-scrolling: touch; 
+      }
+      video {
         width: 100%;
         height: auto;
+      }
+      canvas {
+        width: 100%;
+        height: auto;
+        display: block;
       }
     </style>
   </head>
   <body>
-    <!-- video element to play video -->
-    <video id="input_vid" controls playsinline></video>
-    <!-- canvas for drawing landmarks  -->
+    <h1 style="color: red; text-align: center;">HTML is Loaded and Visible!</h1>
+
+    <!-- video component that loads and plays the video passed from React Native Expo -->
+    <video id="input_vid" controls playsinline
+      onerror="window.ReactNativeWebView.postMessage('Video error: ' + event.target.error.code)"
+      onloadeddata="window.ReactNativeWebView.postMessage('Video loaded')"
+      onplaying="window.ReactNativeWebView.postMessage('Video playing')">
+    </video>
+    
+    <!-- draws pose landmarks over video -->
     <canvas id="output_canvas"></canvas>
 
     <script>
-      let vid = document.getElementById("input_video");
+      let vid = document.getElementById("input_vid");
       let canvas = document.getElementById("output_canvas");
-      //preparing canvas 2D context
       let canvas_context = canvas.getContext('2d');
 
-      //listens for a message from React Native WebView
-      window.document.addEventListener('message', function(event) {
+      let pose;
 
-        //obtains video URI sent from React Native
-        const video_uri = event.data;
-
+      window.handleVideoUri = function(video_uri) { //function takes uri sent by React Native
+        window.ReactNativeWebView.postMessage("Handling video URI: " + video_uri);
         vid.src = video_uri;
-        //start playback
-        vid.play();
 
-        //MediaPipe Pose Setup
-        let pose = new Pose.pose({
+        //creates MediaPipe pose instance
+        pose = new window.Pose({
           locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
         });
-
         pose.setOptions({
           modelComplexity: 1,
-          // applies smoothing filters to reduce jitter
           smoothLandmarks: true,
-          //segmentation masks aren't generated (improves performance)
           enableSegmentation: false,
-          //default confidence levels
           minDetectionConfidence: 0.5,
           minTrackingConfidence: 0.5
         });
 
-        //sets up a callback that runs every time a fram is processed
+        //draws landmarks and connectors
         pose.onResults(results => {
-          //saves current drawing state of the canvas (to restore later)
-          canvas_context.save();
-          //clears the canvas
-          canvas_context.clearRect(0,0, canvas.width, canvas.height);
-          //draws the current video fram onto the canvas
-          canvas_context.drawImage(results.image, 0, 0, canvas.width, canvas.height);
-          //draws lines and pose markings if body landmarks are detected
-          if (results.poseLandmarks) {
-            drawConnectors(canvasCtx, results.poseLandmarks, Pose.POSE_CONNECTIONS,
-                         {color: '#00FF00', lineWidth: 4});
-            drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#FF0000', lineWidth: 2});
+          //sets canvas size
+          if (canvas.width !== vid.videoWidth || canvas.height !== vid.videoHeight) {
+            canvas.width = vid.videoWidth;
+            canvas.height = vid.videoHeight;
           }
-          //restores the canvas to its previous drawing state
-          canvas_context.restore();
-        })
 
-        //callback that runs when the video loads enough data to start playing
-        videoElement.addEventListener('loadeddata', () => {
-          function processFrame() {
-            //sends the video frame for processing
-            pose.send({ image: videoElement });
-            //requests the next animation frame (creating a loop that sends frams to pose detector)
-            requestAnimationFrame(processFrame);
+          //saves canvas state
+          canvas_context.save();
+          //clears any previous drawings
+          canvas_context.clearRect(0, 0, canvas.width, canvas.height);
+          //draws the current video frame with results from MediaPipe (results.image) onto the canvas
+          canvas_context.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+          if (results.poseLandmarks) {
+            //takes landmarks pairs (either through POSE_CONNECTIONS or manually set up pairs)
+            const POSE_CONNECTIONS = window.Pose?.POSE_CONNECTIONS || [
+              [0,1],[1,2],[2,3],[3,7],
+              [0,4],[4,5],[5,6],[6,8],
+              [9,10],[11,12],
+              [11,13],[13,15],[15,17],[15,19],[15,21],
+              [17,19],[12,14],[14,16],[16,18],[16,20],[16,22],
+              [18,20],[23,24],
+              [11,23], [12,24],
+              [23,25],[24,26],[25,27],[26,28],
+              [27,29],[28,30],[29,31],[30,32]
+            ];
+
+            //draws the connectors (lines)
+            drawConnectors(canvas_context, results.poseLandmarks, POSE_CONNECTIONS, {
+              color: '#FF0000',
+              lineWidth: 2,
+            });
+            //draws the landmarks (points)
+            drawLandmarks(canvas_context, results.poseLandmarks, {
+              color: '#FF0000',
+              lineWidth: 1,
+              circleRadius: 3,
+            });
           }
-          //starts the frame processing loop
-          processFrame();
+          //restores the canvas state after drawing
+          canvas_context.restore();
         });
-      });
+
+        // sends video frames to pose after video plays
+        vid.onplay = () => {
+          window.ReactNativeWebView.postMessage("Video playing, starting pose processing.");
+          //starts loop by calling onVideoFrame function each frame
+          requestAnimationFrame(onVideoFrame);
+        };
+
+        function onVideoFrame() {
+          //if video is ready and playing
+          if (vid.readyState >= 2 && !vid.paused && !vid.ended) {
+            //sends video frame to pose model for processing
+            pose.send({image: vid});
+          }
+          //continues loop by requesting next frame
+          requestAnimationFrame(onVideoFrame);
+        }
+      };
+
+      window.onload = function() {
+        window.ReactNativeWebView.postMessage('pageReady');
+        if (window.Pose) {
+          window.ReactNativeWebView.postMessage('Pose is available');
+        } else {
+          window.ReactNativeWebView.postMessage('Pose is not available');
+        }
+      };
+
     </script>
   </body>
 </html>
