@@ -43,7 +43,7 @@ class LoginRequest(BaseModel):
 @app.post("/signup")
 def signup(user_data: SignupRequest, db: Session = Depends(get_db)):
 
-  print("endpoint called")
+  # print("endpoint called")
 
   # checks for existing user w/ email
   existing_user = db.query(User).filter(User.email == user_data.email).first()

@@ -58,6 +58,76 @@
       let canvas_context = canvas.getContext('2d');
 
       let pose;
+      //tracks results (individual frames)
+      let poseFrames = [];
+
+      //function that normalizes landmarks relative to the hips
+      function normalize(landmarks) {
+        //grabs hip landmarks from MediaPipe
+        const leftHip = landmarks[23];
+        const rightHip = landmarks[24];
+
+        //calculates the midpoint between the hips (in both the x and y direction)
+        //acts as the new origin for the body
+        const midpointX = (leftHip.x + rightHip.x) / 2;
+        const midpointY = (leftHip.y + rightHip.y) / 2;
+
+        //calculates distance between the hips
+        //allows for size of individual to no longer matter; allows for focus on pose/shape
+        const scale = Math.hypot(leftHip.x - rightHip.x, leftHip.y - rightHip.y);
+
+        return landmarks.map(landmark => ({
+          //subtract midpoint to move origin to the hips
+          //divide by scale to normalize for body size
+          x: (landmark.x - midpointX) / scale,
+          y: (landmark.y - midpointY) / scale,
+          //z and visibility are unchanged
+          z: landmark.z,
+          visibility: landmark.visibility
+        }));
+      }
+
+      //function that calculates the angle between three points
+      function calculateAngle(a, b, c) {
+        //create vectors
+        const u = {x: a.x - b.x, y: a.y - b.y};
+        const v = {x: c.x - b.x, y: c.y - b.y};
+
+        //cos(theta) = dot product / product of magnitudes
+
+        //dot product
+        const dot = (u.x * v.x) + (u.y * v.y);
+
+        //calculating the magnitudes
+        const mag_u = Math.hypot(u.x, u.y);
+        const mag_v = Math.hypot(v.x, v.y);
+
+        //take arccos for the angle
+        //returns angle in degrees
+        return Math.acos(dot / (mag_u * mag_v)) * (180 / Math.PI);
+      }
+
+      //function for phase detection
+      function detectPhase(landmarks) {
+        const wrist = landmarks[16]; // right wrist
+        const elbow = landmarks[14]; // right elbow
+        const shoulder = landmarks[12]; //right shoulder
+        const hip = landmarks[24]; //right hip
+
+        if (wrist.x < hip.x) {
+          return 'Preparation';
+        }
+        else if (elbow.y > shoulder.y && wrist.x > elbow.x) {
+          return 'Acceleration';
+        }
+        else if (Math.abs(wrist.x - shoulder.x) < 0.05) {
+          return 'Contact';
+        }
+        else if (wrist.x > shoulder.x) {
+          return 'Follow-through';
+        }
+        return 'Unknown';
+      }
 
       window.handleVideoUri = function(video_uri) { //function takes uri sent by React Native
         window.ReactNativeWebView.postMessage("Handling video URI: " + video_uri);
@@ -91,6 +161,18 @@
           canvas_context.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
           if (results.poseLandmarks) {
+
+            //calls functions created above
+            const norm = normalize(results.poseLandmarks);
+            const phase = detectPhase(norm);
+
+            poseFrames.push({
+              timestamp: vid.currentTime, phase, //records timestamp and phase
+              landmarks: norm //adds normalized landmark
+
+              //landmarks: JSON.parse(JSON.stringify(results.poseLandmarks)), // deep copy of landmark
+            });
+
             //takes landmarks pairs (either through POSE_CONNECTIONS or manually set up pairs)
             const POSE_CONNECTIONS = window.Pose?.POSE_CONNECTIONS || [
               [0,1],[1,2],[2,3],[3,7],
@@ -115,6 +197,17 @@
               lineWidth: 1,
               circleRadius: 3,
             });
+
+            //display phase classification on canvas
+            canvas_context.font = "bold 100px Arial";
+            canvas_context.fillStyle = 'yellow';
+            canvas_context.fillText(`Phase: ${phase}`, 20, 50);
+
+            //sends phase to React Native
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              time: vid.currentTime,
+              phase: phase
+            }));
           }
           //restores the canvas state after drawing
           canvas_context.restore();
