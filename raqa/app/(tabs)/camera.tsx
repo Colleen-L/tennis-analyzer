@@ -3,6 +3,7 @@ import { StyleSheet, TouchableOpacity, View, Text, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
 import { useRouter } from 'expo-router';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function Camera() {
   const cameraRef = useRef<CameraView>(null);
@@ -58,17 +59,20 @@ export default function Camera() {
       //stops recording if was recording
       if (isRecording) {
           try {
-          await cameraRef.current.stopRecording();
+            await cameraRef.current.stopRecording();
           } catch (error) {
-          Alert.alert('Error', 'Failed to stop recording');
+            Alert.alert('Error', 'Failed to stop recording');
           } finally {
-          setIsRecording(false);
+            setIsRecording(false);
+            deactivateKeepAwake();
           }
           return;
       }
 
       //starts recording
       setIsRecording(true);
+      activateKeepAwakeAsync();
+
       try {
           const video = await cameraRef.current.recordAsync();
 
@@ -106,6 +110,7 @@ export default function Camera() {
           Alert.alert('Error', 'Recording failed');
       } finally {
           setIsRecording(false);
+          deactivateKeepAwake();
       }
   };
 
