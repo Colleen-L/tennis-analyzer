@@ -67,14 +67,19 @@
         const leftHip = landmarks[23];
         const rightHip = landmarks[24];
 
-        //calculates the midpoint between the hips (in both the x and y direction)
+        //calculates the midpoint between the hips (in both the x, y, z direction)
         //acts as the new origin for the body
         const midpointX = (leftHip.x + rightHip.x) / 2;
         const midpointY = (leftHip.y + rightHip.y) / 2;
+        const midpointZ = (leftHip.z + rightHip.z) / 2;
 
         //calculates distance between the hips
         //allows for size of individual to no longer matter; allows for focus on pose/shape
-        const scale = Math.hypot(leftHip.x - rightHip.x, leftHip.y - rightHip.y);
+        const scale = Math.sqrt(
+          Math.pow(leftHip.x - rightHip.x, 2) +
+          Math.pow(leftHip.y - rightHip.y, 2) +
+          Math.pow(leftHip.z - rightHip.z, 2)
+        );
 
         return landmarks.map(landmark => ({
           //subtract midpoint to move origin to the hips
@@ -82,7 +87,7 @@
           x: (landmark.x - midpointX) / scale,
           y: (landmark.y - midpointY) / scale,
           //z and visibility are unchanged
-          z: landmark.z,
+          z: (landmark.z - midpointZ) / scale,
           visibility: landmark.visibility
         }));
       }
@@ -90,43 +95,98 @@
       //function that calculates the angle between three points
       function calculateAngle(a, b, c) {
         //create vectors
-        const u = {x: a.x - b.x, y: a.y - b.y};
-        const v = {x: c.x - b.x, y: c.y - b.y};
+        const u = {
+          x: a.x - b.x,
+          y: a.y - b.y,
+          z: a.z - b.z
+        };
+        const v = {
+          x: c.x - b.x,
+          y: c.y - b.y,
+          z: c.z - b.z,
+        };
 
         //cos(theta) = dot product / product of magnitudes
 
         //dot product
-        const dot = (u.x * v.x) + (u.y * v.y);
+        const dot = (u.x * v.x) + (u.y * v.y) + (u.z * v.z);
 
         //calculating the magnitudes
-        const mag_u = Math.hypot(u.x, u.y);
-        const mag_v = Math.hypot(v.x, v.y);
+        const mag_u = Math.sqrt(u.x * u.x + u.y * u.y + u.z * u.z);
+        const mag_v = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+
+        if (mag_u === 0 || mag_v === 0) {
+          return 0;
+        }
+
+        const cosAngle = Math.min(Math.max(dot / (mag_u * mag_v), -1), 1);
 
         //take arccos for the angle
         //returns angle in degrees
-        return Math.acos(dot / (mag_u * mag_v)) * (180 / Math.PI);
+        return Math.acos(cosAngle) * (180 / Math.PI);
       }
 
       //function for phase detection
       function detectPhase(landmarks) {
-        const wrist = landmarks[16]; // right wrist
-        const elbow = landmarks[14]; // right elbow
-        const shoulder = landmarks[12]; //right shoulder
-        const hip = landmarks[24]; //right hip
+        //right side landmarks
+        const wristR = landmarks[16]; // right wrist
+        const elbowR = landmarks[14]; // right elbow
+        const shoulderR = landmarks[12]; //right shoulder
+        const hipR = landmarks[24]; //right hip
+        const kneeR = landmarks[26]; //right knee
+        const ankleR = landmarks[28] //right ankle
 
-        if (wrist.x < hip.x) {
-          return 'Preparation';
+        //left side landmarks
+        const wristL = landmarks[15]; //left wrist
+        const elbowL = landmarks[13]; // left elbow
+        const shoulderL = landmarks[11]; //left shoulder
+        const hipL = landmarks[23]; //left hip
+        const kneeL = landmarks[25]; //left knee
+        const ankleL = landmarks[27] //left ankle
+
+        //right side angles
+        const elbowAngleR = calculateAngle(shoulderR, elbowR, wristR);
+        const shoulderAngleR = calculateAngle(elbowR, shoulderR, hipR);
+        const kneeAngleR = calculateAngle(hipR, kneeR, ankleR);
+
+        //left side angles
+        const elbowAngleL = calculateAngle(shoulderL, elbowL, wristL);
+        const shoulderAngleL = calculateAngle(elbowL, shoulderL, hipL);
+        const kneeAngleL = calculateAngle(hipL, kneeL, ankleL);
+
+        if (
+          ((wristR.visibility < 0.75) || (wristR.z > shoulderR.z)) &&      //right wrist not visible or wrist in front of shoulders
+          (shoulderL.z < shoulderR.z - 0.10)                               //slight tilt in torso
+        ) {
+          return "Follow-Through";
         }
-        else if (elbow.y > shoulder.y && wrist.x > elbow.x) {
-          return 'Acceleration';
+
+        if (
+          wristR.visibility > 0.5 &&
+          (wristR.y > (hipR.y + 30)) &&        // wrist below hip
+          wristR.z < elbowR.z &&                       // wrist closer than elbow 
+          wristL.z > wristR.z && elbowL.z > wristR.z   // left arm further than right wrist
+        ) {
+          return "Acceleration";
         }
-        else if (Math.abs(wrist.x - shoulder.x) < 0.05) {
-          return 'Contact';
+
+        if (
+          wristR.visibility > 0.5 &&
+          (wristR.y <= elbowR.y) &&                   // wrist above elbow
+          (wristR.y < hipR.y && elbowR.y < hipR.y) && // wrist and elbow above hip
+          (ankleL.z > ankleR.z) &&                   // left foot further from camera
+          (shoulderL.z > shoulderR.z) &&             // left shoulder further from camera
+          (elbowR.z < hipR.z)                        // arm behind hip
+        ) {
+          return "Preparation";
         }
-        else if (wrist.x > shoulder.x) {
-          return 'Follow-through';
+
+        if ((wristR.visibility < 0.5 && wristL.visibility < 0.5) && //wrists not visible
+            (kneeAngleL < 175 && kneeAngleR < 175)) {               //knees slightly bent
+          return "Ready Position";
         }
-        return 'Unknown';
+
+        return "Unknown"; 
       }
 
       window.handleVideoUri = function(video_uri) { //function takes uri sent by React Native
