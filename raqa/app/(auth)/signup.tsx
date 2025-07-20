@@ -36,7 +36,7 @@ export default function SignupScreen() {
     
     try {
       //sends POST request to backend (where enpoint is /signup)
-      const response = await fetch('http://172.20.10.2:8000/signup', {
+      const response = await fetch('http://10.0.0.48:8000/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
