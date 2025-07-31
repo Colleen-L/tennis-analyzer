@@ -8,6 +8,9 @@ import { Asset } from 'expo-asset';
 // allowing for embedding web content
 import WebView from 'react-native-webview';
 
+import federerJson from '../../assets/mediapipe/backview/federer.json';
+
+
 export default function MovementProcessor() {
   //extracts uri from router params
   //stores uri of video captured by expo-camera
@@ -142,6 +145,41 @@ export default function MovementProcessor() {
     }
   }, [pageReady, readyVideoUri]);
 
+  useEffect(() => {
+    //checks that the page is ready
+    if (!pageReady) return;
+
+    //sends the reference sequence from pro player
+    const sendReferenceJSON = async () => {
+      try {
+        //injects JS providing the pro player json file
+        const jsCode = `
+          (function() {
+            try {
+              //clears existing reference sequence
+              window.referenceSequence = null;
+              
+              //injects the reference sequence
+              const rawData = ${JSON.stringify(federerJson)};
+              
+              //assigns data to reference sequence
+              window.referenceSequence = rawData;
+            } catch (error) {
+              window.ReactNativeWebView.postMessage("Error in reference injection: " + error.message);
+            }
+          })();
+          true;
+        `;
+
+        webViewRef.current?.injectJavaScript(jsCode);
+      } catch (e) {
+        console.error("failed to inject reference sequence:", e);
+      }
+    };
+    sendReferenceJSON();
+  }, [pageReady]);
+
+
   //accounts for platform differences in file paths
   const webViewUri = Platform.OS === 'ios' ? htmlPath : 'file://' + htmlPath;
 
@@ -169,12 +207,23 @@ export default function MovementProcessor() {
         allowUniversalAccessFromFileURLs
         //listens for messages sent from the WebView
         onMessage={(event) => {
-          const message = event.nativeEvent.data;
-          console.log('Message from WebView:', message);
-          //tracks readiness of the page
-          if (message === 'pageReady') {
-            setPageReady(true);
-          }
+            const rawMessage = event.nativeEvent.data;
+            console.log('Raw WebView message:', rawMessage);
+
+            try {
+              const data = JSON.parse(rawMessage);
+
+              if (data.type === "dtw") {
+                console.log("DTW Distance from WebView:", data.distance);
+                if (data.error) {
+                  console.warn("DTW Error:", data.error);
+                }
+              }
+            } catch (err) {
+              if (rawMessage === 'pageReady') {
+                setPageReady(true);
+              }
+            }
         }}
         style={styles.webview}
         //enables scrolling

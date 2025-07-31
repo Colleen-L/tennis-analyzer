@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Pro Pose Extraction</title>
+  <title>Pro Pose Data</title>
   <!-- Import MediaPipe Pose from CDN (Content Delivery Network) -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 </head>
 <body>
-
-<h2>Pro Video Pose Extraction</h2>
 
 <video id="video" controls crossorigin="anonymous">
   <source src="./raqa/assets/videos/federer_forehand.mov" type="video/mp4" />
@@ -227,14 +225,14 @@
 
     // saves frame data
     poseFrames.push({
-      time: videoElement.currentTime,
-      phase,
-      rightElbowAngle: elbowAngleR.toFixed(1),
-      rightShoulderAngle: shoulderAngleR.toFixed(1),
-      rightKneeAngle: kneeAngleR.toFixed(1),
-      leftElbowAngle: elbowAngleL.toFixed(1),
-      leftShoulderAngle: shoulderAngleL.toFixed(1),
-      leftKneeAngle: kneeAngleL.toFixed(1),
+      //time: videoElement.currentTime,
+      //phase,
+      // rightElbowAngle: elbowAngleR.toFixed(1),
+      // rightShoulderAngle: shoulderAngleR.toFixed(1),
+      // rightKneeAngle: kneeAngleR.toFixed(1),
+      // leftElbowAngle: elbowAngleL.toFixed(1),
+      // leftShoulderAngle: shoulderAngleL.toFixed(1),
+      // leftKneeAngle: kneeAngleL.toFixed(1),
       landmarks
     });
 

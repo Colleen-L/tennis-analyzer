@@ -18,6 +18,9 @@
       onload="window.ReactNativeWebView.postMessage('Camera utils loaded');"
       onerror="window.ReactNativeWebView.postMessage('Camera utils failed to load');">
     </script>
+    <!-- Import DTW -->
+    <script src="https://unpkg.com/dtw"></script>
+
     <style>
       html, body {
         height: 100%;
@@ -52,6 +55,9 @@
     <!-- draws pose landmarks over video -->
     <canvas id="output_canvas"></canvas>
 
+    <!-- button that analyzes with pro stroke -->
+     <button id="compareButton">Compare to Pro Stroke</button>
+
     <script>
       let vid = document.getElementById("input_vid");
       let canvas = document.getElementById("output_canvas");
@@ -60,6 +66,7 @@
       let pose;
       //tracks results (individual frames)
       let poseFrames = [];
+      let referenceSequence;
 
       //function that normalizes landmarks relative to the hips
       function normalize(landmarks) {
@@ -189,8 +196,140 @@
         return "Unknown"; 
       }
 
-      window.handleVideoUri = function(video_uri) { //function takes uri sent by React Native
-        window.ReactNativeWebView.postMessage("Handling video URI: " + video_uri);
+      //function to find the Euclidean distance between two vectors
+      function euclideanDistance(a, b) {
+        //checks that inputs are null/undefined
+        if (!a || !b) {
+          window.ReactNativeWebView.postMessage('euclideanDistance: null input');
+          return Infinity;
+        }
+        
+        //checks that the lengths of the inputs are the same
+        if (a.length !== b.length) {
+          window.ReactNativeWebView.postMessage(`euclideanDistance: length mismatch ${a.length} vs ${b.length}`);
+          return Infinity;
+        }
+
+        //calculates the squared difference and adds to the sum
+        let sum = 0;
+        for (let i = 0; i < a.length; i++) {
+          //checks that the values are numbers
+          if (typeof a[i] !== 'number' || typeof b[i] !== 'number') {
+            window.ReactNativeWebView.postMessage(`euclideanDistance: invalid number at index ${i}: ${a[i]}, ${b[i]}`);
+            return Infinity;
+          }
+          //checks that the values are finite
+          if (!isFinite(a[i]) || !isFinite(b[i])) {
+            window.ReactNativeWebView.postMessage(`euclideanDistance: non-finite number at index ${i}: ${a[i]}, ${b[i]}`);
+            return Infinity;
+          }
+          
+          //calculates the squared difference
+          //adds to the sum
+          const diff = a[i] - b[i];
+          sum += diff * diff;
+        }
+
+        //takes the sqrt for Euclidean distance
+        const result = Math.sqrt(sum);
+        //checks that the final result is finite
+        if (!isFinite(result)) {
+          window.ReactNativeWebView.postMessage(`euclideanDistance: non-finite result ${result}`);
+          return Infinity;
+        }
+        
+        return result;
+      }
+
+      //function for DTW with better error handling
+      function computeDTW(seqA, seqB) {
+        try {
+          //checks that the inputs aren't null/undefined
+          if (!seqA || !seqB) {
+            throw new Error('One or both sequences are null/undefined');
+          }
+          //checks that the inputs are arrays
+          if (!Array.isArray(seqA) || !Array.isArray(seqB)) {
+            throw new Error('Both sequences must be arrays');
+          }
+          //checks that the inputs are not empty
+          if (seqA.length === 0 || seqB.length === 0) {
+            throw new Error('Both sequences must have length > 0');
+          }
+
+          const len_A = seqA.length;
+          const len_B = seqB.length;
+          
+          //logs predicted matrix size
+          window.ReactNativeWebView.postMessage(`DTW matrix size will be: ${len_A + 1} x ${len_B + 1}`);
+          
+          //checks that the first few elements of both matrices are arrays/vectors
+          for (let i = 0; i < Math.min(3, len_A); i++) {
+            if (!Array.isArray(seqA[i])) {
+              throw new Error(`seqA[${i}] is not an array: ${typeof seqA[i]}`);
+            }
+          }
+          for (let i = 0; i < Math.min(3, len_B); i++) {
+            if (!Array.isArray(seqB[i])) {
+              throw new Error(`seqB[${i}] is not an array: ${typeof seqB[i]}`);
+            }
+          }
+
+          //initialize 2D matrix (filled with infinity)
+          const dtw = Array(len_A + 1).fill(null).map(() => Array(len_B + 1).fill(Infinity));
+          dtw[0][0] = 0;
+
+          //computation for dtw
+          for (let i = 1; i <= len_A; i++) {
+            for (let j = 1; j <= len_B; j++) {
+              //calculates the cost/distance
+              const cost = euclideanDistance(seqA[i - 1], seqB[j - 1]);
+              
+              //checks that the cost is finite
+              if (!isFinite(cost)) {
+                window.ReactNativeWebView.postMessage(`Invalid cost at i=${i}, j=${j}: ${cost}`);
+                throw new Error(`Invalid cost computed at position (${i}, ${j}): ${cost}`);
+              }
+              
+              //chooses the minimum
+              const minPrev = Math.min(
+                dtw[i - 1][j],     // insertion
+                dtw[i][j - 1],     // deletion
+                dtw[i - 1][j - 1]  // match
+              );
+              
+              //updates the total cost
+              dtw[i][j] = cost + minPrev;
+              
+              //checks that the result is finite
+              if (!isFinite(dtw[i][j])) {
+                throw new Error(`Non-finite DTW value at (${i}, ${j}): ${dtw[i][j]}`);
+              }
+            }
+          }
+
+          const finalResult = dtw[len_A][len_B];
+          
+          //logs final DTW result
+          window.ReactNativeWebView.postMessage(`DTW computation successful. Result: ${finalResult}`);
+          return finalResult;
+          
+        } catch (error) {
+          window.ReactNativeWebView.postMessage(`DTW Error: ${error.message}`);
+          window.ReactNativeWebView.postMessage(`DTW Stack: ${error.stack}`);
+          return null;
+        }
+      }
+
+      //function takes uri sent by React Native
+      window.handleVideoUri = function(video_uri) {
+        //preserves the referenceSequence if it exists
+        const existingReferenceSequence = window.referenceSequence;
+        if (existingReferenceSequence && existingReferenceSequence.length > 0) {
+          window.ReactNativeWebView.postMessage("Preserving existing referenceSequence with length: " + existingReferenceSequence.length);
+          referenceSequence = existingReferenceSequence;
+        }
+
         vid.src = video_uri;
 
         //creates MediaPipe pose instance
@@ -227,7 +366,8 @@
             const phase = detectPhase(norm);
 
             poseFrames.push({
-              timestamp: vid.currentTime, phase, //records timestamp and phase
+              timestamp: vid.currentTime, //records timestamp
+              phase, //records phase
               landmarks: norm //adds normalized landmark
 
               //landmarks: JSON.parse(JSON.stringify(results.poseLandmarks)), // deep copy of landmark
@@ -292,14 +432,110 @@
       };
 
       window.onload = function() {
+        //sends pageReady to React Native to update state
         window.ReactNativeWebView.postMessage('pageReady');
+        
+        const button = document.getElementById("compareButton");
+
+        button.addEventListener("click", () => {
+          //checks that poseFrames is not empty
+          if (!poseFrames.length) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: "dtw",
+              distance: null,
+              error: "No poseFrames collected"
+            }));
+            return;
+          }
+          //checks that referenceSequence is not empty or doesn't exist
+          if (!referenceSequence || !referenceSequence.length) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: "dtw",
+              distance: null,
+              error: "No referenceSequence available"
+            }));
+            return;
+          }
+
+          try {
+
+            /*
+             * USER SEQUENCE
+             */
+
+            // Create user sequence with detailed validation
+            const userSequence = [];
+            for (let i = 0; i < poseFrames.length; i++) {
+              const frame = poseFrames[i];
+              
+              const flatLandmarks = [];
+              //flattens each coordinate triplet into a single array
+              for (let j = 0; j < frame.landmarks.length; j++) {
+                const landmark = frame.landmarks[j];
+                flatLandmarks.push(landmark.x, landmark.y, landmark.z);
+              }
+              //adds flattened landmarks to the user's sequence
+              userSequence.push(flatLandmarks);
+            }
+
+            /*
+             * REFERENCE SEQUENCE
+             */
+
+            //converts the reference sequence to a standardized version
+            let processedReferenceSequence;
+            if (referenceSequence.length > 0) {
+              const firstRef = referenceSequence[0];
+              
+              //checks if the first element of the reference sequence is an array
+              if (Array.isArray(firstRef)) {
+                //already in correct format (expected flattened format)
+                processedReferenceSequence = referenceSequence;
+
+              //CONVERSION from object to array
+              } else if (typeof firstRef === 'object' && firstRef !== null) {
+                //converts the reference sequence if it is in object format
+                //converts each frame into a flat array of numbers
+                if (firstRef.landmarks && Array.isArray(firstRef.landmarks)) {
+                  processedReferenceSequence = referenceSequence.map(frame => {
+                    return frame.landmarks.flatMap(landmark => [landmark.x, landmark.y, landmark.z]);
+                  });
+                }
+              }
+            } else {
+              throw new Error('empty reference sequence');
+            }
+            
+            //computes dtwDistance using helper function
+            const dtwDistance = computeDTW(userSequence, processedReferenceSequence);
+            
+            //sends calculated information
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: "dtw",
+              distance: dtwDistance,
+              originalUserFrames: userSequence.length,
+              originalReferenceFrames: processedReferenceSequence.length
+            }));
+            
+            window.ReactNativeWebView.postMessage('DTW computation completed successfully');
+            
+          } catch (error) {
+            window.ReactNativeWebView.postMessage('DTW Error: ' + error.message);
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: "dtw",
+              distance: null,
+              error: error.message
+            }));
+          }
+        });
+
+        //logs information about pose availability
         if (window.Pose) {
           window.ReactNativeWebView.postMessage('Pose is available');
         } else {
           window.ReactNativeWebView.postMessage('Pose is not available');
         }
       };
-
     </script>
   </body>
 </html>
