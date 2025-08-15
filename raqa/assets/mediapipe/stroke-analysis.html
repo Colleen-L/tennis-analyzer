@@ -73,29 +73,49 @@
         //grabs hip landmarks from MediaPipe
         const leftHip = landmarks[23];
         const rightHip = landmarks[24];
+        //grabs shoulder landmarks from MediaPipe
+        const leftShoulder = landmarks[11];
+        const rightShoulder = landmarks[12];
 
         //calculates the midpoint between the hips (in both the x, y, z direction)
-        //acts as the new origin for the body
-        const midpointX = (leftHip.x + rightHip.x) / 2;
-        const midpointY = (leftHip.y + rightHip.y) / 2;
-        const midpointZ = (leftHip.z + rightHip.z) / 2;
+        const hipMidpoint = {
+          x: (leftHip.x + rightHip.x) / 2,
+          y: (leftHip.y + rightHip.y) / 2,
+          //z: (leftHip.z + rightHip.z) / 2
+        }
+
+        //calculates the midpoint between the shoulders
+        const shoulderMidpoint = {
+          x: (leftShoulder.x + rightShoulder.x) / 2,
+          y: (leftShoulder.y + rightShoulder.y) / 2,
+          //z: (leftShoulder.z + rightShoulder.z) / 2
+        }
 
         //calculates distance between the hips
         //allows for size of individual to no longer matter; allows for focus on pose/shape
-        const scale = Math.sqrt(
+        const hipWidth = Math.sqrt(
           Math.pow(leftHip.x - rightHip.x, 2) +
-          Math.pow(leftHip.y - rightHip.y, 2) +
-          Math.pow(leftHip.z - rightHip.z, 2)
+          Math.pow(leftHip.y - rightHip.y, 2) //+
+          //Math.pow(leftHip.z - rightHip.z, 2)
         );
 
+        //calculates the torso length, uses as scale instead of just hip width
+        const torsoLength = Math.sqrt(
+          Math.pow(shoulderMidpoint.x - hipMidpoint.x, 2) +
+          Math.pow(shoulderMidpoint.y - hipMidpoint.y, 2) //+
+          //Math.pow(shoulderMidpoint.z - hipMidpoint.z, 2)
+        );
+
+        const scale = Math.max(torsoLength, hipWidth * 0.5);
+        
         return landmarks.map(landmark => ({
           //subtract midpoint to move origin to the hips
           //divide by scale to normalize for body size
-          x: (landmark.x - midpointX) / scale,
-          y: (landmark.y - midpointY) / scale,
+          x: (landmark.x - hipMidpoint.x) / scale,
+          y: (landmark.y - hipMidpoint.y) / scale,
           //z and visibility are unchanged
-          z: (landmark.z - midpointZ) / scale,
-          visibility: landmark.visibility
+          //z: (landmark.z - hipMidpoint.z) / scale,
+          visibility: landmark.visibility || 1.0  // Fallback for missing visibility
         }));
       }
 
@@ -105,22 +125,22 @@
         const u = {
           x: a.x - b.x,
           y: a.y - b.y,
-          z: a.z - b.z
+          //z: a.z - b.z
         };
         const v = {
           x: c.x - b.x,
           y: c.y - b.y,
-          z: c.z - b.z,
+          //z: c.z - b.z,
         };
 
         //cos(theta) = dot product / product of magnitudes
 
         //dot product
-        const dot = (u.x * v.x) + (u.y * v.y) + (u.z * v.z);
+        const dot = (u.x * v.x) + (u.y * v.y) //+ (u.z * v.z);
 
         //calculating the magnitudes
-        const mag_u = Math.sqrt(u.x * u.x + u.y * u.y + u.z * u.z);
-        const mag_v = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+        const mag_u = Math.sqrt(u.x * u.x + u.y * u.y); //+ u.z * u.z);
+        const mag_v = Math.sqrt(v.x * v.x + v.y * v.y); //+ v.z * v.z);
 
         if (mag_u === 0 || mag_v === 0) {
           return 0;
@@ -131,6 +151,104 @@
         //take arccos for the angle
         //returns angle in degrees
         return Math.acos(cosAngle) * (180 / Math.PI);
+      }
+
+      //helper function to calculate distance between two landmarks
+      function landmarkDistance(l1, l2) {
+          if (!l1 || !l2) return 0;
+          //returns euclidean distance between two landmarks
+          return Math.sqrt(
+            Math.pow(l1.x - l2.x, 2) +
+            Math.pow(l1.y - l2.y, 2)
+          );
+      }
+
+      //function to create distance-invariant features
+      function improvedFeatures(landmarks) {
+        
+        const angles = [];
+        //stores key angles
+        const keyAngles = [
+          //right arm
+          [12,14,16], //shoulder, elbow, wrist
+          [14,16,18], //elbow, wrist, hand
+          [11,12,24], //shoulder, shoulder, hip
+
+          //left arm
+          [11,13,15], //shoulder, elbow, wrist
+          [13,15,17], //elbow, wrist, hand
+
+          //legs
+          [24,26,28], //(right) hip, knee, ankle
+          [23,25,27], //(left) hip, knee, ankle
+
+          //spine
+          [11,23,25], //(left) shoulder, hip, knee
+          [12,24,26], //(right) shoulder, hip, knee
+        ];
+
+        //calculates angles based on 3D landmarks for better accuracy
+        function calculate3DAngle(a, b, c) {
+            const u = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+            const v = { x: c.x - b.x, y: c.y - b.y, z: c.z - b.z };
+            const dot = (u.x * v.x) + (u.y * v.y) + (u.z * v.z);
+            const mag_u = Math.sqrt(u.x*u.x + u.y*u.y + u.z*u.z);
+            const mag_v = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+            if (mag_u === 0 || mag_v === 0) return 0;
+            const cosAngle = Math.min(Math.max(dot / (mag_u * mag_v), -1), 1);
+            return Math.acos(cosAngle) * (180 / Math.PI);
+        }
+
+        //loops through each triplet of points
+        keyAngles.forEach(([a, b, c]) => {
+          //checks if points exist and are mostly visible
+          if (landmarks[a] && landmarks[b] && landmarks[c] && 
+              landmarks[a].visibility > 0.3 && landmarks[b].visibility > 0.3 && landmarks[c].visibility > 0.3) {
+            const angle = calculate3DAngle(landmarks[a], landmarks[b], landmarks[c]);
+            //normalizes angles to 0-1 range
+            angles.push(angle / 180.0);
+          } else {
+            //fallback
+            //normalized 90 degrees
+            angles.push(0.5);
+          }
+        });
+
+        //selects torso landmarks
+        const leftHip = landmarks[23];
+        const rightHip = landmarks[24];
+        const leftShoulder = landmarks[11];
+        const rightShoulder = landmarks[12];
+        
+        //ensures landmarks exist
+        if (!leftHip || !rightHip || !leftShoulder || !rightShoulder) {
+            return null; 
+        }
+
+        //calculates midpoints for hips and shoulders
+        const hipMidpoint = { x: (leftHip.x + rightHip.x) / 2, y: (leftHip.y + rightHip.y) / 2 };
+        const shoulderMidpoint = { x: (leftShoulder.x + rightShoulder.x) / 2, y: (leftShoulder.y + rightShoulder.y) / 2 };
+        //calculates the torso lenghth in 2D
+        const torsoLength = Math.sqrt(Math.pow(shoulderMidpoint.x - hipMidpoint.x, 2) + Math.pow(shoulderMidpoint.y - hipMidpoint.y, 2));
+
+        //avoids division by zero
+        const scale = torsoLength > 0 ? torsoLength : 1;
+        
+        //computes wrist positions relative to hip midpoint
+        //makes model distance and size invariant
+        const normalizedPositions = [
+            (landmarks[16].x - hipMidpoint.x) / scale, //right wrist x
+            (landmarks[16].y - hipMidpoint.y) / scale, //right wrist y
+            (landmarks[15].x - hipMidpoint.x) / scale, //left wrist x
+            (landmarks[15].y - hipMidpoint.y) / scale, //left wrist y
+        ];
+
+        //combines joint angles and normalized wrist position
+        const features = [...angles, ...normalizedPositions];
+        
+        //returns combined/validated feature vector
+        const validFeatures = features.map(f => isFinite(f) ? f : 0);
+        return validFeatures;
       }
 
       //function for phase detection
@@ -460,67 +578,113 @@
           try {
 
             /*
-             * USER SEQUENCE
+             * USER SEQUENCE - Use improvedFeatures for consistency
              */
-
-            // Create user sequence with detailed validation
             const userSequence = [];
             for (let i = 0; i < poseFrames.length; i++) {
               const frame = poseFrames[i];
+              const features = improvedFeatures(frame.landmarks);
               
-              const flatLandmarks = [];
-              //flattens each coordinate triplet into a single array
-              for (let j = 0; j < frame.landmarks.length; j++) {
-                const landmark = frame.landmarks[j];
-                flatLandmarks.push(landmark.x, landmark.y, landmark.z);
+              // Validate features
+              if (!features || features.length === 0 || features.some(f => !isFinite(f))) {
+                window.ReactNativeWebView.postMessage(`Invalid user features at frame ${i}: ${JSON.stringify(features)}`);
+                continue;
               }
-              //adds flattened landmarks to the user's sequence
-              userSequence.push(flatLandmarks);
+              
+              userSequence.push(features);
             }
 
             /*
-             * REFERENCE SEQUENCE
+             * REFERENCE SEQUENCE - FIXED to use same feature extraction
              */
-
-            //converts the reference sequence to a standardized version
-            let processedReferenceSequence;
+            let processedReferenceSequence = [];
+            
             if (referenceSequence.length > 0) {
               const firstRef = referenceSequence[0];
               
-              //checks if the first element of the reference sequence is an array
-              if (Array.isArray(firstRef)) {
-                //already in correct format (expected flattened format)
-                processedReferenceSequence = referenceSequence;
-
-              //CONVERSION from object to array
-              } else if (typeof firstRef === 'object' && firstRef !== null) {
-                //converts the reference sequence if it is in object format
-                //converts each frame into a flat array of numbers
-                if (firstRef.landmarks && Array.isArray(firstRef.landmarks)) {
-                  processedReferenceSequence = referenceSequence.map(frame => {
-                    return frame.landmarks.flatMap(landmark => [landmark.x, landmark.y, landmark.z]);
-                  });
-                }
+              // If reference has landmarks, process them the same way as user
+              if (firstRef && typeof firstRef === 'object' && firstRef.landmarks) {
+                processedReferenceSequence = referenceSequence.map(frame => {
+                  // Ensure landmarks have visibility field
+                  const landmarksWithVisibility = frame.landmarks.map(landmark => ({
+                    x: landmark.x,
+                    y: landmark.y, 
+                    z: landmark.z,
+                    visibility: landmark.visibility || 1.0
+                  }));
+                  
+                  // Apply same feature extraction as user
+                  const features = improvedFeatures(landmarksWithVisibility);
+                  
+                  // Validate features
+                  if (!features || features.length === 0 || features.some(f => !isFinite(f))) {
+                    window.ReactNativeWebView.postMessage(`Invalid reference features: ${JSON.stringify(features)}`);
+                    return null;
+                  }
+                  
+                  return features;
+                }).filter(f => f !== null); // Remove invalid frames
+                
+              } else if (Array.isArray(firstRef)) {
+                // Reference is already processed feature vectors
+                processedReferenceSequence = referenceSequence.filter(frame => 
+                  frame && Array.isArray(frame) && frame.every(f => isFinite(f))
+                );
+              } else {
+                throw new Error('Unsupported reference sequence format');
               }
             } else {
-              throw new Error('empty reference sequence');
+              throw new Error('Empty reference sequence');
             }
+
+            // Debug logging
+            window.ReactNativeWebView.postMessage(`User sequence length: ${userSequence.length}`);
+            window.ReactNativeWebView.postMessage(`Reference sequence length: ${processedReferenceSequence.length}`);
             
-            //computes dtwDistance using helper function
+            if (userSequence.length > 0 && processedReferenceSequence.length > 0) {
+              window.ReactNativeWebView.postMessage(`User feature vector length: ${userSequence[0].length}`);
+              window.ReactNativeWebView.postMessage(`Reference feature vector length: ${processedReferenceSequence[0].length}`);
+              
+              // Check feature vector lengths match
+              if (userSequence[0].length !== processedReferenceSequence[0].length) {
+                throw new Error(`Feature vector length mismatch: user=${userSequence[0].length}, reference=${processedReferenceSequence[0].length}`);
+              }
+              
+              // Debug first frame distance
+              const firstFrameDistance = euclideanDistance(userSequence[0], processedReferenceSequence[0]);
+              window.ReactNativeWebView.postMessage(`Distance between first frames: ${firstFrameDistance}`);
+              
+              // Log sample feature vectors for debugging
+              window.ReactNativeWebView.postMessage(`User features[0]: ${JSON.stringify(userSequence[0].slice(0, 5))}...`);
+              window.ReactNativeWebView.postMessage(`Reference features[0]: ${JSON.stringify(processedReferenceSequence[0].slice(0, 5))}...`);
+            }
+
+            // Compute DTW with normalized distance
             const dtwDistance = computeDTW(userSequence, processedReferenceSequence);
+            
+            // Normalize DTW distance by sequence lengths and feature dimensions
+            let normalizedDistance = null;
+            if (dtwDistance !== null && isFinite(dtwDistance)) {
+              const avgSequenceLength = (userSequence.length + processedReferenceSequence.length) / 2;
+              const featureDimensions = userSequence[0].length;
+              normalizedDistance = dtwDistance / (avgSequenceLength * Math.sqrt(featureDimensions));
+            }
             
             //sends calculated information
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: "dtw",
               distance: dtwDistance,
+              normalizedDistance: normalizedDistance,
               originalUserFrames: userSequence.length,
-              originalReferenceFrames: processedReferenceSequence.length
+              originalReferenceFrames: processedReferenceSequence.length,
+              featureVectorLength: userSequence.length > 0 ? userSequence[0].length : 0
             }));
             
             window.ReactNativeWebView.postMessage('DTW computation completed successfully');
             
           } catch (error) {
             window.ReactNativeWebView.postMessage('DTW Error: ' + error.message);
+            window.ReactNativeWebView.postMessage('DTW Stack: ' + error.stack);
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: "dtw",
               distance: null,

@@ -92,7 +92,7 @@ export default function MovementProcessor() {
           console.log('Video copied to:', destUri);
           //sets state to the new copied file location
           setReadyVideoUri(destUri);
-        } else {
+        } else {  
           //sets state to the original URI
           setReadyVideoUri(sentUri);
         }
