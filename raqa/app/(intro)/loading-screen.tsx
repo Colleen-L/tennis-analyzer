@@ -41,11 +41,14 @@ export default function LoadingIntro() {
             loop
             autoPlay
             style={{
-              width: 200,
-              height: 200,
+              width: 250,
+              height: 250,
+              marginBottom: 50,
+              borderRadius: 180,
+              backgroundColor: '#F7F7ED'
             }}
           />
-          <View>
+          <View style={styles.textBox}>
             <Text style={styles.logoText}>
               RAQA.
             </Text>
@@ -64,14 +67,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#6A9860',
-    rowGap: 50,
+  },
+  textBox: {
+    rowGap: 10,
   },
   logoText: {
-    fontSize: 20,
+    fontSize: 32,
     fontFamily: 'Menlo',
+    textAlign: 'center',
+    color: 'white',
   },
   motto: {
-    fontSize: 14,
+    fontSize: 16,
+    textAlign: 'center',
     fontFamily: 'Menlo',
+    color: 'white',
   }
 });

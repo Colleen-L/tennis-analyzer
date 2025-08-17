@@ -21,23 +21,23 @@ type Slide = {
 const slides: Slide[] = [
   {
     key: '1',
-    title: 'Welcome to RAQA!',
+    title: 'WELCOME TO RAQA!',
     description: 'RAQA aims to bring you poise and precision through patience and resilience',
-    backgroundColor: '#171719',
+    backgroundColor: 'white',
     animation: precisionAnimation,
   },
   {
     key: '2',
     title: 'YOUR COMMUNITY',
     description: 'Connect with other tennis players in a supporting and uplifting environment',
-    backgroundColor: '#171719',
+    backgroundColor: 'white',
     animation: communityAnimation,
   },
   {
     key: '3',
     title: 'MOTIVATION AND GROWTH',
     description: 'Track your growth and mastery in a creative, yet competitive, method',
-    backgroundColor: '#171719',
+    backgroundColor: 'white',
     animation: growthAnimation,
   },
 ];
@@ -79,11 +79,11 @@ export default function Onboarding() {
           source={item.animation}
           loop
           autoPlay
-          style={{width: width, height: height/2.5}}
+          style={{width: width, height: height/2.2}}
         />
       )}
-      <Text style={{fontFamily: 'Menlo', width: width, backgroundColor: '#6A9860', color: '#F5F0DF', textAlign: 'center', fontSize: 32, marginBottom: 15, padding: 10}}>{item.title}</Text>
-      <Text style={{fontFamily: 'slabion', letterSpacing: 5, color: '#F5F0DF', fontSize: 24, marginLeft: 15, marginRight: 15, padding: 30, textAlign: 'center', borderColor: '#F5F0DF', borderWidth: 1}}>{item.description}</Text>
+      <Text style={{fontFamily: 'Menlo', width: width, color: '#171719', textAlign: 'center', fontSize: 40, padding: 10}}>{item.title}</Text>
+      <Text style={{fontFamily: 'Menlo', letterSpacing: 1, color: '#171719', fontSize: 18, marginLeft: 15, marginRight: 15, padding: 30, textAlign: 'center'}}>{item.description}</Text>
     </View>
   );
 
@@ -143,8 +143,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dot: {
-    width: 10,
-    height: 10,
+    width: 20,
+    height: 5,
     borderRadius: 5,
     marginHorizontal: 6,
   },
@@ -155,14 +155,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
   },
   button: {
-    fontFamily: 'agneos',
+    fontFamily: 'Menlo',
     textAlign: 'center',
+    backgroundColor: '#6A9860',
+    color: 'white',
     borderColor: 'black',
     borderWidth: 1,
     borderRadius: 20,
     fontSize: 18,
     padding: 10,
-    marginTop: 20,
+    margin: 20,
     width: width/2,
   }
 });

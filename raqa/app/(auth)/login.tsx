@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, Text, StyleSheet, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TextInput, Text, StyleSheet, Image, Alert, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
+import { ImageBackground } from 'expo-image';
+
+const {width, height} = Dimensions.get('window');
 
 //expected structure of the login API response
 type LoginResponse = {
@@ -81,12 +84,16 @@ export default function LoginScreen() {
 
   return (
     <>
-      <View style={styles.container}>
-        {/* login form */}
-        <View style={styles.loginContainer}>
+      <ImageBackground
+        source={require('@/assets/images/tenniscourt.jpg')}
+        style={styles.background}
+      >
+        <View style={styles.container}>
+          {/* login form */}
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor="#171719"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -95,6 +102,7 @@ export default function LoginScreen() {
           <TextInput
             style={styles.input}
             placeholder="Password"
+            placeholderTextColor="#171719"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
@@ -131,20 +139,27 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>Continue with Google</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ImageBackground>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#EBEBEB',
+    width: width,
+    height: height,
+    borderWidth: 1,
+    justifyContent: 'flex-end',
   },
-  loginContainer: {
-    flex: 1,
-    paddingTop: 50,
+  container: {
+    backgroundColor: "white",
+    opacity: 0.95,
+    borderTopEndRadius: 32,
+    borderTopStartRadius: 32,
+    width: width,
+    height: height * (3.3/5),
+    paddingTop: 20,
   },
   input: {
     borderWidth: 1,
