@@ -2,19 +2,31 @@ import { useEffect } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
+//stays on screen until fonts are loaded
+import {useFonts} from 'expo-font';
 
 export default function LoadingIntro() {
   const router = useRouter();
 
+  const [fontsLoaded] = useFonts({
+    slabion: require('@/assets/fonts/Slabion-ZpJZB.ttf'),
+    agneos: require('@/assets/fonts/agneos-regular.ttf')
+  });
+
   //redirects page after a second
   useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/(intro)/onboarding");
-    }, 3000);
+    if (fontsLoaded) {
+      const timer = setTimeout(() => {
+        router.replace("/(intro)/onboarding");
+      }, 3000);
 
-    return () => clearTimeout(timer);
-  })
+      return () => clearTimeout(timer);
+    }
+  }, [fontsLoaded]);
 
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return(
     <>
@@ -55,11 +67,11 @@ const styles = StyleSheet.create({
     rowGap: 50,
   },
   logoText: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Menlo',
   },
   motto: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Menlo',
   }
 });
