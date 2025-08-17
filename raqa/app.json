@@ -10,12 +10,17 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.colleenl.raqa"
+      "bundleIdentifier": "com.colleenl.raqa",
+      "icon": {
+        "light": "./assets/images/icons/ios-light.png",
+        "dark": "./assets/images/icons/ios-dark.png",
+        "tinted": "./assets/images/icons/ios-tinted.png"
+      }
     },
     "android": {
       "package": "com.colleenl.raqa",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icons/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
@@ -30,10 +35,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/icons/splash-icon-dark.png",
+          "dark": {
+            "image": "./assets/images/icons/splash-icon-light.png",
+            "backgroundColor": "#000000"
+          },
+          "imageWidth": 200
         }
       ],
       "expo-secure-store"
