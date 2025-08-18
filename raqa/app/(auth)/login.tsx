@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, StyleSheet, Image, Alert, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
@@ -78,9 +79,17 @@ export default function LoginScreen() {
     iosClientId: '550585625092-e26ej2s4cnc1s1kvs6jqnavljj7sb0hu.apps.googleusercontent.com',
     clientId: '550585625092-0hkur1li8dirla1ijen79mhodd62m3bq.apps.googleusercontent.com',
   });
+  //redirection w Google sign-in
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
 
-
-  // CONTINUE GOOGLE AUTH HERE...
+      if (authentication?.accessToken) {
+        SecureStore.setItemAsync('access_token', authentication.accessToken);
+        router.replace('/(tabs)');
+      }
+    }
+  }, [response]);
 
   return (
     <>
