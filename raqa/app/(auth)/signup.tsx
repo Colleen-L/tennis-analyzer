@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { View, TextInput, Button, Image, Text, StyleSheet, Dimensions, Alert, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ImageBackground } from 'expo-image';
+
+const {width, height} = Dimensions.get('window');
 
 //expected structure of the signup API response
 type SignupResponse = {
@@ -69,65 +71,163 @@ export default function SignupScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder='Name'
-        autoCapitalize='none'
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <TouchableOpacity
-        style={styles.button}
-        onPress={signup}
+    <>
+      <ImageBackground
+        source={require('@/assets/images/tennisball.jpg')}
+        style={styles.background}
       >
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.container}>
+          {/* choice between login/signup */}
+          <View style={styles.choice}>
+            <TouchableOpacity
+              onPress={() => router.replace('/(auth)/login')}
+              style={styles.login}
+            >
+              <Text style={{fontFamily: 'Menlo', textAlign: 'center'}}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.register}
+              onPress={() => router.replace('/(auth)/signup')}
+            >
+              <Text style={{fontFamily: 'Menlo', textAlign: 'center'}}>Sign up</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* signup form */}
+          {/* inspiration message */}
+
+          <View style ={{rowGap: 5}}>
+            <Text style={{fontFamily: 'Menlo', fontSize: 14, textAlign: 'center'}}>Together we can achieve more.</Text>
+            <Text style={{fontFamily: 'Menlo', fontSize: 16, textAlign: 'center'}}>Let's get started! ️‍🔥</Text>
+          </View>
+
+          {/* name */}
+          <View style={{justifyContent:"center", alignItems: "center", width: width, flexDirection: "row" }}>
+            <Image
+              source={require('@/assets/images/icons/login/name.png')}
+              style={{width: 25, height: 25}}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder='Name'
+              placeholderTextColor="#171719"
+              autoCapitalize='none'
+              value={name}
+              onChangeText={setName}
+            />
+          </View>
+
+          {/* email */}
+          <View style={{justifyContent:"center", alignItems: "center", width: width, flexDirection: "row" }}>
+            <Image
+              source={require('@/assets/images/icons/login/email.png')}
+              style={{width: 25, height: 25}}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#171719"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+          </View>
+
+          {/* password */}
+          <View style={{justifyContent:"center", alignItems: "center", width: width, flexDirection: "row" }}>
+            <Image
+              source={require('@/assets/images/icons/login/password.png')}
+              style={{width: 25, height: 25}}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#171719"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={signup}
+          >
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </TouchableOpacity>
+          <Text style={{width: width, fontSize: 12, textAlign: 'center', color: '#7e977eff', fontFamily: 'Menlo'}}>By signing up, you are agreeing to our Terms and Conditions</Text>
+        </View>
+      </ImageBackground>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
+    width: width,
+    height: height,
+    justifyContent: 'flex-end',
+  },
+  container: {
+    opacity: 0.95,
+    backgroundColor: "white",
+    borderTopEndRadius: 32,
+    borderTopStartRadius: 32,
+    width: width,
+    height: height * (3/5),
+    paddingTop: 20,
+    justifyContent: 'space-evenly'
+  },
+  choice: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    width: width * (2/3) + 5,
+    backgroundColor: '#99b795ff',
     justifyContent: 'center',
-    backgroundColor: '#EBEBEB',
+    borderRadius: 20,
+    height: 40
+  },
+  login: {
+    width: width * (1/3),
+    alignSelf: 'center',
+    justifyContent: 'center',
+    height: 35,
+    borderRadius: 20,
+  },
+  register: {
+    width: width * (1/3),
+    alignSelf: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#AEDE4B',
+    borderColor: 'white',
+    borderWidth: 1,
+    borderRadius: 20,
+    height: 35,
   },
   input: {
     borderWidth: 1,
+    width: width * (2/3) - 25,
+    alignSelf: 'center',
     borderColor: '#353535',
     color: '#6A9860',
-    marginVertical: 8,
-    marginHorizontal: 50,
+    marginHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 4,
     fontFamily: 'Menlo',
-    padding: 20,
+    padding: 10,
   },
   button: {
-    backgroundColor: '#353535',
-    marginHorizontal: 50,
-    borderRadius: 12,
-    marginTop: 10,
+    borderColor: '#A0B9A0',
+    borderWidth: 2, 
+    width: width * (2/3),
+    alignSelf: 'center',
+    marginHorizontal: 10,
+    borderRadius: 20,
     paddingVertical: 8,
   },
   buttonText: {
-    color: '#EBEBEB',
+    color: '#171719',
     fontFamily: 'Menlo',
     fontSize: 18,
     textAlign: 'center',

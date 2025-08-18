@@ -10,7 +10,7 @@ export default function LoadingIntro() {
 
   const [fontsLoaded] = useFonts({
     slabion: require('@/assets/fonts/Slabion-ZpJZB.ttf'),
-    agneos: require('@/assets/fonts/agneos-regular.ttf')
+    graphik: require('@/assets/fonts/graphik.ttf')
   });
 
   //redirects page after a second

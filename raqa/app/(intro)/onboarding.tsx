@@ -82,7 +82,7 @@ export default function Onboarding() {
           style={{width: width, height: height/2.2}}
         />
       )}
-      <Text style={{fontFamily: 'Menlo', width: width, color: '#171719', textAlign: 'center', fontSize: 40, padding: 10}}>{item.title}</Text>
+      <Text style={{fontFamily: 'graphik', letterSpacing: 4, fontSize: 40, width: width, color: '#171719', textAlign: 'center', padding: 10}}>{item.title}</Text>
       <Text style={{fontFamily: 'Menlo', letterSpacing: 1, color: '#171719', fontSize: 18, marginLeft: 15, marginRight: 15, padding: 30, textAlign: 'center'}}>{item.description}</Text>
     </View>
   );
