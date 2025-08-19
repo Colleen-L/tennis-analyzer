@@ -38,7 +38,7 @@ export default function SignupScreen() {
     
     try {
       //sends POST request to backend (where enpoint is /signup)
-      const response = await fetch('http://10.0.0.48:8000/signup', {
+      const response = await fetch('http://10.7.78.215:8000/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,6 +77,13 @@ export default function SignupScreen() {
         style={styles.background}
       >
         <View style={styles.container}>
+
+                    {/* inspiration message */}
+
+          <View style ={{rowGap: 5}}>
+            <Text style={{fontFamily: 'Menlo', fontSize: 18, textAlign: 'center'}}>Create an Account</Text>
+          </View>
+
           {/* choice between login/signup */}
           <View style={styles.choice}>
             <TouchableOpacity
@@ -94,13 +101,6 @@ export default function SignupScreen() {
           </View>
 
           {/* signup form */}
-          {/* inspiration message */}
-
-          <View style ={{rowGap: 5}}>
-            <Text style={{fontFamily: 'Menlo', fontSize: 14, textAlign: 'center'}}>Together we can achieve more.</Text>
-            <Text style={{fontFamily: 'Menlo', fontSize: 16, textAlign: 'center'}}>Let's get started! ️‍🔥</Text>
-          </View>
-
           {/* name */}
           <View style={{justifyContent:"center", alignItems: "center", width: width, flexDirection: "row" }}>
             <Image
@@ -155,7 +155,7 @@ export default function SignupScreen() {
           >
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
-          <Text style={{width: width, fontSize: 12, textAlign: 'center', color: '#7e977eff', fontFamily: 'Menlo'}}>By signing up, you are agreeing to our Terms and Conditions</Text>
+          <Text style={{width: width, fontSize: 14, textAlign: 'center', color: '#7e977eff', fontFamily: 'Menlo'}}>By signing up, you are agreeing to our Terms and Conditions</Text>
         </View>
       </ImageBackground>
     </>

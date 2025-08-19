@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, Text, StyleSheet, Image, Alert, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
@@ -38,7 +37,7 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       //sends a POST request to backend (where endpoint is /login)
-      const response = await fetch('http://10.0.0.48:8000/login', {
+      const response = await fetch('http://10.7.78.215:8000/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -98,6 +97,10 @@ export default function LoginScreen() {
         style={styles.background}
       >
         <View style={styles.container}>
+
+          {/* opening line */}
+          <Text style={{textAlign: 'center', fontFamily: 'Menlo', fontSize: 18}}>Welcome Back!</Text>
+
           {/* choice between login/signup */}
           <View style={styles.choice}>
             <TouchableOpacity
@@ -151,6 +154,7 @@ export default function LoginScreen() {
           {/* password reset */}
           <TouchableOpacity
             style={styles.linkBtn}
+            onPress={() => router.push('/(auth)/forgot')}
           >
             <Text style={styles.linkBtnText}>Forgot Password?</Text>
           </TouchableOpacity>
@@ -204,6 +208,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Apple */}
+            {/*
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.externalIcons}
@@ -215,6 +220,7 @@ export default function LoginScreen() {
               />
               <Text style={{fontFamily: 'Menlo', fontSize: 14}}>Apple</Text>
             </TouchableOpacity>
+            */}
           </View>
         </View>
       </ImageBackground>
