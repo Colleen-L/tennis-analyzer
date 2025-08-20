@@ -38,7 +38,7 @@ export default function SignupScreen() {
     
     try {
       //sends POST request to backend (where enpoint is /signup)
-      const response = await fetch('http://10.7.78.215:8000/signup', {
+      const response = await fetch('http://10.0.0.48:8000/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +78,7 @@ export default function SignupScreen() {
       >
         <View style={styles.container}>
 
-                    {/* inspiration message */}
+          {/* inspiration message */}
 
           <View style ={{rowGap: 5}}>
             <Text style={{fontFamily: 'Menlo', fontSize: 18, textAlign: 'center'}}>Create an Account</Text>

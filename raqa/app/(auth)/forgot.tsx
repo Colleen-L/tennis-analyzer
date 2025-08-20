@@ -1,10 +1,6 @@
-// /app/(auth)/forgot-password.tsx
-
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-
-const { width } = Dimensions.get('window');
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -12,14 +8,16 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
 
   const handlePasswordReset = async () => {
+    //ensures email is not empty
     if (!email.trim()) {
       Alert.alert('Missing Email', 'Please enter your email address.');
       return;
     }
 
     setLoading(true);
+    //connects to FastAPI backend to send the verification code
     try {
-      const res = await fetch('http://10.7.78.215:8000/forgot-email', {
+      const res = await fetch('http://10.0.0.48:8000/send-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -34,7 +32,11 @@ export default function ForgotPassword() {
           'Email Sent',
           'Check your inbox for a password reset link or code.'
         );
-        router.replace('/(auth)/login');
+        
+        router.replace({
+          pathname: '/(auth)/verification',
+          params: { email },
+        });
       }
     } catch (error) {
       Alert.alert('Error', 'Something went wrong.');
@@ -45,7 +47,20 @@ export default function ForgotPassword() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Reset your password</Text>
+      <TouchableOpacity style = {styles.back} onPress={() => router.back()}>
+        <Image 
+          source={require('@/assets/images/icons/reset-password/back.png')}
+          style={{width: 50, height: 50}}
+        />
+        <Text style={{fontSize: 16, color: '#6A9860', fontFamily: 'Menlo'}}>Back</Text>
+      </TouchableOpacity>
+
+      <Image
+        source={require('@/assets/images/icons/reset-password/reset.png')}
+        style={{height: 200, width: 200, alignSelf: 'center', marginBottom: 50}}
+      />
+      <Text style={styles.title}>Forgot your password?</Text>
+      <Text style={{fontFamily: 'Menlo', fontSize: 14, marginBottom: 20, textAlign: 'center'}}>Please enter your email address below to reset your password.</Text>
       <TextInput
         style={styles.input}
         placeholder="Enter your email"
@@ -66,20 +81,25 @@ export default function ForgotPassword() {
           <Text style={styles.buttonText}>Send Reset Email</Text>
         )}
       </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.link}>Back to login</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 100,
+    paddingTop: 50,
     paddingHorizontal: 30,
     backgroundColor: '#fff',
     flex: 1,
+  },
+  back: {
+    alignSelf: 'flex-start',
+    width: 100,
+    height: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 25,
   },
   title: {
     fontSize: 22,

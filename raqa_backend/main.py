@@ -5,6 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import local_session, engine
 from models import Base, User
 from auth import hash_password, verify_password, create_access_token
+from forgot_pass import send_verif_email
+import random
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 # automatically creates tables as defined in models.py in db (if it doesn't exist)
 Base.metadata.create_all(bind=engine)
@@ -69,3 +73,74 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
       raise HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
   token = create_access_token(data={"sub": user.email})
   return {"access_token": token, "token_type": "bearer"}
+
+
+# verification email; sends the verification code to the email
+class EmailRequest(BaseModel):
+   email: EmailStr
+
+# sends verification code
+@app.post("/send-code")
+def send_code(req: EmailRequest, db: Session = Depends(get_db)):
+    #checks that the user exists using the inputted email
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    # generates random 6 digit code
+    code = str(random.randint(100000, 999999))
+    expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    user.reset_token = code
+    user.reset_token_expiry = expiry
+    db.commit()
+
+    try:
+        send_verif_email(req.email, code)
+        return {"message": "Verification code sent!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to send email")
+
+# checks the verification code
+class CodeVerificationRequest(BaseModel):
+   email: EmailStr
+   code: str
+  
+@app.post("/verify-code")
+def verify_code(req: CodeVerificationRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user or user.reset_token != req.code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+
+    expiry = user.reset_token_expiry
+    if expiry is None:
+        raise HTTPException(status_code=400, detail="Verification code expired")
+
+    # allows for valid time zone comparison
+    if expiry.tzinfo is None:
+        expiry = expiry.replace(tzinfo=ZoneInfo("America/New_York")).astimezone(timezone.utc)
+
+    if expiry < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Verification code expired")
+
+    return {"message": "Verification successful"}
+
+# resets the password
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str = Field(..., min_length=6, strip_whitespace=True)
+
+@app.post("/reset-password")
+def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
+    #checks that the user exists using the inputted email
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password = hash_password(data.new_password)
+
+    # clears the reset token in db
+    user.reset_token = None
+    user.reset_token_expiry = None
+
+    db.commit()
+    return {"message": "Password reset successful"}
