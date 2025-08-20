@@ -22,6 +22,7 @@ export default function LoginScreen() {
   const router = useRouter();
 
   //state variables that store input values
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   //keeps track of loading state for button UI

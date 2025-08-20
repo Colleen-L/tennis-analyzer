@@ -1,16 +1,10 @@
 import { View, Text, TouchableOpacity, Button } from 'react-native';
 import { useRouter, Link } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 
 
 
-export default function ExploreScreen() {
+export default function StrokeAnalysis() {
   const router = useRouter();
-
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync('access_token');
-    router.replace("/(auth)/login");
-  }
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -23,7 +17,6 @@ export default function ExploreScreen() {
           marginTop: 20
         }}>
           <Text style={{ color: 'white' }}>Open Camera</Text>
-          <Button title = "Log out" onPress={handleLogout} />
         </TouchableOpacity>
       </Link>
     </View>
