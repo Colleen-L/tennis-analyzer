@@ -40,6 +40,34 @@
         height: auto;
         display: block;
       }
+      #dtwResult {
+        background-color: #f0f0f0;
+        border: 2px solid #333;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        text-align: center;
+      }
+      #compareButton {
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px 24px;
+        font-size: 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 10px;
+        display: block;
+      }
+      #compareButton:hover {
+        background-color: #45a049;
+      }
+      #compareButton:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -56,7 +84,13 @@
     <canvas id="output_canvas"></canvas>
 
     <!-- button that analyzes with pro stroke -->
-     <button id="compareButton">Compare to Pro Stroke</button>
+    <button id="compareButton">Compare to Pro Stroke</button>
+
+    <!-- displays dtw distance -->
+    <div id="dtwResult" style="display: none;">
+      <h3>Comparison Result</h3>
+      <div id="dtwContent"></div>
+    </div>
 
     <script>
       let vid = document.getElementById("input_vid");
@@ -439,6 +473,58 @@
         }
       }
 
+      //function to display dtw results
+      function displayResults(data) {
+        const resultDiv = document.getElementById('dtwResult');
+        const contentDiv = document.getElementById('dtwContent');
+        
+        if (data.error) {
+          //displays error message if error occurs
+          contentDiv.innerHTML = `
+            <p style="color: red; font-weight: bold;">Error: ${data.error}</p>
+          `;
+          resultDiv.style.backgroundColor = '#ffe6e6';
+          resultDiv.style.borderColor = '#ff0000';
+        } else {
+          //displays result
+          let similarity = 'Unknown';
+          let color = '#333';
+          
+          if (data.normalizedDistance !== null) {
+            if (data.normalizedDistance < 0.1) {
+              similarity = 'Excellent Match';
+              color = '#4CAF50';
+            } else if (data.normalizedDistance < 0.2) {
+              similarity = 'Good Match';
+              color = '#8BC34A';
+            } else if (data.normalizedDistance < 0.3) {
+              similarity = 'Fair Match';
+              color = '#FFC107';
+            } else {
+              similarity = 'Needs Improvement';
+              color = '#FF5722';
+            }
+          }
+          
+          contentDiv.innerHTML = `
+            <p style="color: ${color}; font-weight: bold; font-size: 18px;">${similarity}</p>
+            <p><strong>DTW Distance:</strong> ${data.distance ? data.distance.toFixed(4) : 'N/A'}</p>
+            <p><strong>Normalized Score:</strong> ${data.normalizedDistance ? data.normalizedDistance.toFixed(4) : 'N/A'}</p>
+            <p><strong>User Frames:</strong> ${data.originalUserFrames || 'N/A'}</p>
+            <p><strong>Reference Frames:</strong> ${data.originalReferenceFrames || 'N/A'}</p>
+            <p><strong>Feature Vector Length:</strong> ${data.featureVectorLength || 'N/A'}</p>
+          `;
+          resultDiv.style.backgroundColor = '#f0f8ff';
+          resultDiv.style.borderColor = '#333';
+        }
+        
+        //makes result visible
+        resultDiv.style.display = 'block';
+        
+        //scrolls to result
+        resultDiv.scrollIntoView({ behavior: 'smooth' });
+      }
+
       //function takes uri sent by React Native
       window.handleVideoUri = function(video_uri) {
         //preserves the referenceSequence if it exists
@@ -556,22 +642,37 @@
         const button = document.getElementById("compareButton");
 
         button.addEventListener("click", () => {
+          //disables button when loading
+          button.disabled = true;
+          button.textContent = 'Analyzing...';
+          
+          //hides/'clears' previous results
+          document.getElementById('dtwResult').style.display = 'none';
+
           //checks that poseFrames is not empty
           if (!poseFrames.length) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
+            const errorData = {
               type: "dtw",
               distance: null,
               error: "No poseFrames collected"
-            }));
+            };
+            window.ReactNativeWebView.postMessage(JSON.stringify(errorData));
+            displayResults(errorData);
+            button.disabled = false;
+            button.textContent = 'Compare to Pro Stroke';
             return;
           }
           //checks that referenceSequence is not empty or doesn't exist
           if (!referenceSequence || !referenceSequence.length) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
+            const errorData = {
               type: "dtw",
               distance: null,
               error: "No referenceSequence available"
-            }));
+            };
+            window.ReactNativeWebView.postMessage(JSON.stringify(errorData));
+            displayResults(errorData);
+            button.disabled = false;
+            button.textContent = 'Compare to Pro Stroke';
             return;
           }
 
@@ -667,18 +768,22 @@
             if (dtwDistance !== null && isFinite(dtwDistance)) {
               const avgSequenceLength = (userSequence.length + processedReferenceSequence.length) / 2;
               const featureDimensions = userSequence[0].length;
-              normalizedDistance = dtwDistance / (avgSequenceLength * Math.sqrt(featureDimensions));
+              //normalizedDistance = (dtwDistance / (avgSequenceLength * Math.sqrt(featureDimensions)));
+              normalizedDistance = dtwDistance / (userSequence.length + referenceSequence.length);
             }
             
             //sends calculated information
-            window.ReactNativeWebView.postMessage(JSON.stringify({
+            const finalResult = {
               type: "dtw",
               distance: dtwDistance,
               normalizedDistance: normalizedDistance,
               originalUserFrames: userSequence.length,
               originalReferenceFrames: processedReferenceSequence.length,
               featureVectorLength: userSequence.length > 0 ? userSequence[0].length : 0
-            }));
+            };
+
+            window.ReactNativeWebView.postMessage(JSON.stringify(finalResult));
+            displayResults(finalResult);
             
             window.ReactNativeWebView.postMessage('DTW computation completed successfully');
             

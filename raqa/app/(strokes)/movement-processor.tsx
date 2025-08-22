@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, StyleSheet, Platform, Button } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 //file system handling
 import * as FileSystem from 'expo-file-system';
 //asset handling
@@ -12,6 +12,7 @@ import federerJson from '../../assets/mediapipe/backview/federer.json';
 
 
 export default function MovementProcessor() {
+  const router = useRouter();
   //extracts uri from router params
   //stores uri of video captured by expo-camera
   const { videoUri } = useLocalSearchParams();
@@ -229,6 +230,7 @@ export default function MovementProcessor() {
         //enables scrolling
         scrollEnabled={true}
       />
+      <Button title="Return Home" onPress={() => router.push("/(tabs)")}></Button>
     </View>
   );
 }
