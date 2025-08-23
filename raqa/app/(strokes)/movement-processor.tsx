@@ -121,6 +121,21 @@ export default function MovementProcessor() {
           //generates a blob URL, a temporary local URL pointing to the blob
           //calls function that receives the blob URL and handles the video
           //returns true
+          // const jsCode = `
+          //   (function() {
+          //     const byteCharacters = atob("${base64}");
+          //     const byteNumbers = new Array(byteCharacters.length);
+          //     for (let i = 0; i < byteCharacters.length; i++) {
+          //       byteNumbers[i] = byteCharacters.charCodeAt(i);
+          //     }
+          //     const byteArray = new Uint8Array(byteNumbers);
+          //     const blob = new Blob([byteArray], { type: 'video/mp4' });
+          //     const blobUrl = URL.createObjectURL(blob);
+          //     window.handleVideoUri(blobUrl);
+          //   })();
+          //   true;
+          // `;
+
           const jsCode = `
             (function() {
               const byteCharacters = atob("${base64}");
@@ -132,6 +147,17 @@ export default function MovementProcessor() {
               const blob = new Blob([byteArray], { type: 'video/mp4' });
               const blobUrl = URL.createObjectURL(blob);
               window.handleVideoUri(blobUrl);
+
+              // If you control the video element, adjust playback speed here
+              const trySetRate = () => {
+                const vid = document.querySelector("video");
+                if (vid) {
+                  vid.playbackRate = 0.25;
+                } else {
+                  setTimeout(trySetRate, 100); // Retry if video not yet loaded
+                }
+              };
+              trySetRate();
             })();
             true;
           `;

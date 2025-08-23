@@ -491,13 +491,13 @@
           let color = '#333';
           
           if (data.normalizedDistance !== null) {
-            if (data.normalizedDistance < 0.1) {
+            if (data.normalizedDistance < 1.5) {
               similarity = 'Excellent Match';
               color = '#4CAF50';
-            } else if (data.normalizedDistance < 0.2) {
+            } else if (data.normalizedDistance < 1.6) {
               similarity = 'Good Match';
               color = '#8BC34A';
-            } else if (data.normalizedDistance < 0.3) {
+            } else if (data.normalizedDistance < 1.7) {
               similarity = 'Fair Match';
               color = '#FFC107';
             } else {

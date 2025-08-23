@@ -38,6 +38,20 @@ export default function TabLayout() {
         }}
       />
 
+     <Tabs.Screen
+        name="video-upload"
+        options={{
+          title: 'Video Analysis',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="analytics-outline" size={24} color={color} />
+          ),
+          tabBarIconStyle: {
+            borderRadius: 40,
+          }
+        }}
+      />
+
+
      {/* Home Tab */}
      <Tabs.Screen
         name="index"
